@@ -1,0 +1,2 @@
+vectorsxxx.S.o: vectorsxxx.S
+vectorsxxx.S :
