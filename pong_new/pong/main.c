@@ -21,6 +21,7 @@
 
 int player1_score = 0;
 int player2_score = 0;
+int bot_counter = 0;
 
 uint8_t font[128 * 4] = {0};
 
@@ -67,6 +68,40 @@ void movePlayer(){
     player2.y += player2.speedY;
     player1.speedY = 0;
     player2.speedY = 0;
+}
+
+void movePlayer_bot(){
+    if(ball.speedX > 0){
+      if(ball.x > 70 && bot_counter < 5){
+        player2.y = ball.y - 4;
+      }
+      else if(ball.x > 70 && ball.x < 71 && (bot_counter % 5) == 0){
+        player2.y = ball.y - 4;
+      }
+    }
+
+  if (buttonThree()) {
+      player1.speedY = 1;
+  }
+  if (buttonFour()) {
+      player1.speedY = -1;
+  }
+  if(player1.y < 0){
+      player1.y = 0;
+  }
+  if(player1.y > MAX_Y - 8){
+      player1.y = MAX_Y - 8;
+  }
+  if(player2.y < 0){
+      player2.y = 0;
+  }
+  if(player2.y > MAX_Y - 8){
+      player2.y = MAX_Y - 8;
+  }
+  player1.y += player1.speedY;
+  player2.y += player2.speedY;
+  player1.speedY = 0;
+  player2.speedY = 0;
 }
 
 void pauseGame(){
@@ -245,10 +280,16 @@ void tick() {
     }
 
     if (ball.x >= (MAX_X - 2)) {
-        if ((ball.y >= player2.y) && (ball.y <= (player2.y + 8))){
+
+        if(bot_counter == 5){
+          bot_counter = 0;
+        }
+        if ((ball.y >= player2.y-1) && (ball.y <= (player2.y + 8))){
             ball.x = MAX_X-2;
             ball.speedX *= (-1);
-        } else{
+            bot_counter++;
+        }
+        else{
             player1_score++;
             increaseScore();
             scored();
@@ -257,7 +298,13 @@ void tick() {
     changeLevel();
     pauseGame();
     winner();
-    movePlayer();
+    if(switchFour() == 0){
+        movePlayer();
+    }
+    else{
+      movePlayer_bot();
+    }
+
 }
 
 void scored(){
@@ -282,7 +329,7 @@ void startGame(){
     ball.x = 64;
     ball.y = 5;
     ball.speedX = 2;
-    ball.speedY = 1;
+    ball.speedY = 2;
 
     player1.x = 0;
     player1.y = 14;
@@ -336,7 +383,6 @@ void drawBall(Ball b) {
         }
     }
 }
-
 
 void screen_reset(){
     int i;
