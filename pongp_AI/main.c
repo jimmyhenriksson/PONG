@@ -21,7 +21,6 @@
 
 int player1_score = 0;
 int player2_score = 0;
-int bot_counter = 0;
 
 uint8_t font[128 * 4] = {0};
 
@@ -70,12 +69,9 @@ void movePlayer(){
     player2.speedY = 0;
 }
 
-void movePlayer_bot(){
+void movePlayer_One(){
     if(ball.speedX > 0){
-      if(ball.x > 70 && bot_counter < 5){
-        player2.y = ball.y - 4;
-      }
-      else if(ball.x > 70 && ball.x < 71 && (bot_counter % 5) == 0){
+      if(ball.x > 70){
         player2.y = ball.y - 4;
       }
     }
@@ -280,16 +276,10 @@ void tick() {
     }
 
     if (ball.x >= (MAX_X - 2)) {
-
-        if(bot_counter == 5){
-          bot_counter = 0;
-        }
-        if ((ball.y >= player2.y-1) && (ball.y <= (player2.y + 8))){
+        if ((ball.y >= player2.y) && (ball.y <= (player2.y + 8))){
             ball.x = MAX_X-2;
             ball.speedX *= (-1);
-            bot_counter++;
-        }
-        else{
+        } else{
             player1_score++;
             increaseScore();
             scored();
@@ -302,7 +292,7 @@ void tick() {
         movePlayer();
     }
     else{
-      movePlayer_bot();
+      movePlayer_One();
     }
 
 }
