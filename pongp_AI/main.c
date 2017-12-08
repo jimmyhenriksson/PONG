@@ -22,6 +22,7 @@
 int player1_score = 0;
 int player2_score = 0;
 int bot_counter = 0;
+int rand_number;
 
 uint8_t font[128 * 4] = {0};
 
@@ -72,10 +73,10 @@ void movePlayer(){
 
 void movePlayer_One(){
     if(ball.speedX > 0){
-      if(ball.x > 70 && (bot_counter % 2) == 0){
+      if(ball.x > 70 && (rand_number % 3) != 0){
         player2.y = ball.y - 4;
       }
-      else if(ball.x > 70 && ball.x < 115 && (bot_counter % 2) != 0){
+      else if(ball.x > 70 && ball.x < 115 && (rand_number % 3) == 0){
         player2.y = ball.y - 4;
       }
     }
@@ -102,6 +103,12 @@ void movePlayer_One(){
   player2.y += player2.speedY;
   player1.speedY = 0;
   player2.speedY = 0;
+}
+
+int generate_random_number(){
+  int random = ball.y/8;
+  random++;
+  return random;
 }
 
 void pauseGame(){
@@ -268,23 +275,27 @@ void tick() {
         ball.speedY *= (-1);
     }
 
-    if (ball.x <= 2) {
-        if ((ball.y >= player1.y) && (ball.y <= (player1.y + 8))){
+    if (ball.x <= 0) {
+        if ((ball.y >= (player1.y-2)) && (ball.y <= (player1.y + 8))){
             ball.x = 2;
             ball.speedX *= (-1);
+            rand_number = generate_random_number();
         } else{
+            rand_number = generate_random_number();
             player2_score++;
             increaseScore();
             scored();
         }
     }
 
-    if (ball.x >= (MAX_X - 2)) {
-        if ((ball.y >= player2.y) && (ball.y <= (player2.y + 8))){
+    if (ball.x >= (MAX_X)) {
+        if ((ball.y >= (player2.y-2)) && (ball.y <= (player2.y + 8))){
             ball.x = MAX_X-2;
             ball.speedX *= (-1);
             bot_counter++;
+            rand_number = generate_random_number();
         } else{
+            rand_number = generate_random_number();
             bot_counter++;
             player1_score++;
             increaseScore();
@@ -541,6 +552,7 @@ void spi_init(){
 }
 
 int main(void) {
+    rand_number = generate_random_number();
     spi_init();
     display_init();
     int i = 1;
