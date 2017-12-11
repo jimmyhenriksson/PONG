@@ -3,6 +3,19 @@
 #include "btnsw.h"
 #include "fonts.h"
 
+/**
+ *
+ *
+ PONG
+ 
+ Spela mot datorn eller mot en vän.
+ Utmana dig själv genom att spela på "Advanced mode"!
+ 
+ Skapat av:
+ Jimmy Henriksson & Navid Haghshenas
+ *
+ */
+
 #define DISPLAY_CHANGE_TO_COMMAND_MODE (PORTFCLR = 0x10)
 #define DISPLAY_CHANGE_TO_DATA_MODE (PORTFSET = 0x10)
 #define DISPLAY_ACTIVATE_RESET (PORTGCLR = 0x200)
@@ -14,14 +27,13 @@
 
 #define MAX_X               127
 #define MAX_Y               31
-#define PLAYER_HEIGHT       8
-#define PLAYER_WIDTH		2
 #define BALL_HEIGHT			2
 #define BALL_WIDTH			2
+#define PLAYER_HEIGHT       8
+#define PLAYER_WIDTH		2
 
 int player1_score = 0;
 int player2_score = 0;
-int bot_counter = 0;
 int rand_number;
 
 uint8_t font[128 * 4] = {0};
@@ -40,6 +52,9 @@ typedef struct Ball {
 Ball ball;
 Player player1,player2;
 
+/**
+ Ändrar spelarnas (brädornas) positioner mha knapparna
+ */
 void movePlayer(){
     if (buttonOne()){
         player2.speedY = -1;
@@ -71,6 +86,9 @@ void movePlayer(){
     player2.speedY = 0;
 }
 
+/**
+ Ändrar den vänstra brädans (player 1) rörelse, aktiverad endast under bot-mode
+ */
 void movePlayer_One(){
     if(ball.speedX > 0){
       if(ball.x > 70 && (rand_number % 3) != 0){
@@ -105,12 +123,18 @@ void movePlayer_One(){
   player2.speedY = 0;
 }
 
+/**
+ Genererar ett slumpmässigt tal baserat på bollens y-position (mellan 1-4)
+ */
 int generate_random_number(){
-  int random = ball.y/8;
+  int random = ball.y/3;
   random++;
   return random;
 }
 
+/**
+ Pausar spelet när switch 1 är uppe
+ */
 void pauseGame(){
     while (switchOne()) {
         display_update_pause();
@@ -118,6 +142,10 @@ void pauseGame(){
     }
 }
 
+/**
+ Ökar spelarnas poäng genom att tända lamporna (4 per spelare som max)
+ inkluderar alla fall som kan uppstå (5x5-1)
+ */
 void increaseScore(){
     volatile int* portE = (volatile int*) 0xbf886110;
     if(player1_score == 0 & player2_score == 1){
@@ -218,11 +246,15 @@ void increaseScore(){
     }
 }
 
+/**
+ meddelar om vem som har vunnit samt startar om spelet mha switch 2
+ */
 void winner(){
     int i = 1;
     if (player1_score >= 5){
         display_update_player1();
         display_update();
+        ball.y++;
         while (i) {
             if (switchTwo()){
                 display_update_levelBas();
@@ -247,7 +279,9 @@ void winner(){
 
     }
 }
-
+/**
+ ändrar till normal/svår nivå mha switch 2 och switch 3
+ */
 void changeLevel(){
     while (switchTwo()){
         startGame();
@@ -261,6 +295,11 @@ void changeLevel(){
     }
 }
 
+/**
+ Får bollen att röra på sig / studsa när den har kommit till övre/nedre sidan av skärmen,
+ eller när den har studsat på brädorna.
+ Ökar ena spelarens poäng om den andra spelaren missar bollen.
+ */
 void tick() {
     ball.x += ball.speedX;
     ball.y += ball.speedY;
@@ -292,11 +331,9 @@ void tick() {
         if ((ball.y >= (player2.y-2)) && (ball.y <= (player2.y + 8))){
             ball.x = MAX_X-2;
             ball.speedX *= (-1);
-            bot_counter++;
             rand_number = generate_random_number();
         } else{
             rand_number = generate_random_number();
-            bot_counter++;
             player1_score++;
             increaseScore();
             scored();
@@ -314,10 +351,13 @@ void tick() {
 
 }
 
+/**
+ Uppdaterar bollen och spelarnas positioner varje någon gör ett mål
+ */
 void scored(){
     ball.x = 64;
-    ball.y = 5;
-
+    ball.y -= (-2);
+    
     player1.x = 0;
     player1.y = 14;
     player1.speedY = 0;
@@ -327,6 +367,9 @@ void scored(){
     player2.speedY = 0;
 }
 
+/**
+ Startar om spelet
+ */
 void startGame(){
     volatile int* portE = (volatile int*) 0xbf886110;
     *portE = *portE & 0x00;		//turn off any leds previously on
@@ -347,6 +390,9 @@ void startGame(){
     player2.speedY = 0;
 }
 
+/**
+ Används för att rita bollen och spelarna
+ */
 void update_pixel(int x, int y){
     int row = 0;
     if(y>0) {
@@ -355,6 +401,9 @@ void update_pixel(int x, int y){
     font[row * 128 + x] |= 1 << (y - row * 8);
 }
 
+/**
+ Ritar spelarna pixel för pixel
+ */
 void drawPlayer(Player p) {
     int i, j;
     for (i = 0; i < PLAYER_WIDTH; i++){
@@ -364,24 +413,10 @@ void drawPlayer(Player p) {
     }
 }
 
-void display_string(int line, char *s) {
-    int i;
-    if(line < 0 || line >= 4){
-        return;
-    }
-    if(!s){
-        return;
-    }
-
-    for(i = 0; i < 16; i++){
-        if(*s) {
-            textbuffer[line][i] = *s;
-            s++;
-        } else{
-            textbuffer[line][i] = ' ';}
-    }
-}
-
+/**
+ Ritar bollen pixel för pixel
+ @param b är bollen (definerad högst upp på klassen)
+ */
 void drawBall(Ball b) {
     int i, j;
     for (i = 0; i < BALL_WIDTH; i++){
@@ -391,6 +426,9 @@ void drawBall(Ball b) {
     }
 }
 
+/**
+ rensar skärmen
+ */
 void screen_reset(){
     int i;
     for(i = 0; i< (128*4); i++){
@@ -398,6 +436,10 @@ void screen_reset(){
     }
 }
 
+/**
+ Dröjer mellan olika "calls"
+ @param int cyc är hur länge (hur många loops) vi ska dröja mellan två "calls"
+ */
 void quicksleep(int cyc) {
     int i;
     for(i = cyc; i > 0; i--);
@@ -410,6 +452,13 @@ uint8_t spi_send_recv(uint8_t data) {
     return SPI2BUF;
 };
 
+
+
+/**
+ *
+ FÖLJANDE METODER ÖPPNAR/ÄNDRAR DISPLAYEN
+ *
+ */
 void display_init(void) {
     DISPLAY_CHANGE_TO_COMMAND_MODE;
     quicksleep(10);
@@ -507,13 +556,17 @@ void display_update_pong(void){
     }
 }
 
-void drawToScreen(){
+/**
+ Resettar och visar alla delar av spelet på skärmen
+ */
+void drawGame(){
     screen_reset();
+    drawBall(ball);
     drawPlayer(player1);
     drawPlayer(player2);
-    drawBall(ball);
     display_update();
 }
+
 
 void spi_init(){
     /* Set up peripheral bus clock */
@@ -551,6 +604,9 @@ void spi_init(){
     SPI2CONSET = 0x8000;
 }
 
+/**
+ Main metod - spelet körs
+ */
 int main(void) {
     rand_number = generate_random_number();
     spi_init();
@@ -564,11 +620,10 @@ int main(void) {
     }
 
     screen_reset();
-
     while(i){
         display_update_pong();
         display_update();
-        if ((getbtns() || buttonOne()) > 0) {
+        if (((getbtns() || buttonOne()) > 0) && (getsw() == 0 || getsw() == 0x8)) {
             i = 0;
         }
     };
@@ -580,7 +635,7 @@ int main(void) {
 
         }
         tick();
-        drawToScreen();
+        drawGame();
     }
     return 0;
 }
